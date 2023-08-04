@@ -1,52 +1,109 @@
 //secret enviroment variable creator
 //in terminal create hidden file touch .env
 //the format must be capital variables lik DB_HOST=any
-require('dotenv').config();
 const { Pool } = require('pg');
-const { Client } = require('pg');
 const express = require("express");
 const bodyParser = require("body-parser");
+const session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
-// const ejs = require("ejs");
+
+require('dotenv').config();
+
 const app = express();
-// Import the user route and register it
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(session({
+  secret:process.env.SECRET,
+  resave:false,
+  saveUninitialized:false
+}));
 
+// Other configurations and middlewares (body-parser, session, etc.)...
 
-// pools will use environment variables
-// for connection information
-// you can also use async/await
-// clients will also use environment variables
-// for connection information
-// const res = await client.query('SELECT NOW()')
-// await client.end()
+// Initialize passport and session
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Database pool
 const pool = new Pool({
   user: process.env.DB_USERNAME,
-  host: process.env.DB_HOST ,
-  database:  process.env.DB_NAME,
-  password:  process.env.DB_PASSWORD,
-  port: process.env.PORT,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
-
-
+// Connect to the database
 async function connectToDatabase() {
   try {
     const client = await pool.connect();
-     
+
     console.log('Connected to PostgreSQL database!');
     client.release();
   } catch (err) {
     console.error('Error acquiring client', err.stack);
   }
 }
+
 connectToDatabase();
 app.use(express.json());
+// Configure passport LocalStrategy
+passport.use(new LocalStrategy(async function(username, password, cb) {
+  const loginQuery = "SELECT * FROM user_accounts WHERE username = $1;";
+  try {
+    const loginResult = await pool.query(loginQuery, [username]);
+    if (loginResult.rows.length === 0) {
+      // Username not found
+      return cb(null, false, { message: 'Incorrect username or password.' });
+    }
+
+    const storedHash = loginResult.rows[0].password_hash;
+    bcrypt.compare(password, storedHash, function(err, result) {
+      if (err) {
+        console.error(err);
+        return cb(err);
+      }
+
+      if (result === true) {
+        // Passwords match, return the user object
+        return cb(null, loginResult.rows[0]);
+      } else {
+        // Passwords do not match
+        return cb(null, false, { message: 'Incorrect username or password.' });
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    return cb(err);
+  }
+}));
+passport.serializeUser(function(user, cb) {
+  cb(null, user.user_id);
+});
+
+passport.deserializeUser(function(id, cb) {
+  pool.query('SELECT * FROM user_accounts WHERE user_id = $1', [id], function(err, result) {
+    if (err) { return cb(err); }
+    const user = result.rows[0];
+    cb(null, user);
+  });
+});
+// Other routes and app configurations...
+
+// Start the server
+// const port = process.env.PORT || 3000;
+// app.listen(port, () => {
+//   console.log(`Server started on port ${port}`);
+// });
+
 //body
 
 
 //---------------Patients----------------
 app.route('/patients').get( async function(req, res){
- try {
+   if (req.isAuthenticated()) {
+   try {
     const result = await pool.query('SELECT * FROM patients');
     res.json(result.rows);
   } catch (err) {
@@ -54,12 +111,17 @@ return res.status(500).json({
   status: "error"
 });
   }
+  } else {
+    res.status(401).json({ error: 'User not authenticated' });
+  }
+ 
 
 
 }).post( async function(req, res) {
   const { patient_code, patient_name, patient_phone_no, patient_age, patient_money, patient_next_visit ,created_date, updated_date } = req.body;
-
-  // Check if required fields are provided
+   if (req.isAuthenticated()) {
+   try {
+    // Check if required fields are provided
   // if (!patient_code || !patient_name || !patient_phone_no || !patient_age || !patient_money || !patient_next_visit) {
   //   return res.status(400).json({ error: 'All fields are required.' });
   // }
@@ -86,16 +148,163 @@ await pool.connect();
     console.error(err);
     res.status(500).json({ error: 'Error creating patient. Please try again later.' });
   }
-})
-
-
-
-
-
-
-app.listen(3000, function() {
-  console.log("Server started on port 3000");
+  } catch (err) {
+return res.status(500).json({
+  status: "error"
 });
+  }
+  } else {
+    res.status(401).json({ error: 'User not authenticated' });
+  }
+
+});
+
+app.post('/login', function(req, res, next) {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'An error occurred while authenticating' });
+    }
+
+    if (!user) {
+      // Authentication failed, redirect to login-failure route
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // If authentication is successful, log in the user
+    req.logIn(user, function(err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'An error occurred while logging in' });
+      }
+
+      // If you want to redirect the user to a dashboard page after successful login
+      // You can do so here:
+      // return res.redirect('/dashboard');
+
+      // Or, you can send a success response with user information
+      return res.status(200).json({ message: 'Login successful', user: user });
+    });
+  })(req, res, next);
+});
+
+// Handle login failure
+app.get('/login-failure', function(req, res) {
+  res.status(401).json({ error: 'Invalid username or password' });
+});
+
+app.post('/register', async function(req, res) {
+  const { username, password, role } = req.body;
+
+  try {
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const registerQuery = 'INSERT INTO user_accounts (username, password_hash, role) VALUES ($1, $2, $3) RETURNING *';
+    const result = await pool.query(registerQuery, [username, hashedPassword, role]);
+    const newUser = result.rows[0];
+
+    res.status(201).json(newUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'An error occurred while registering the user' });
+  }
+});
+
+app.get('/logout', function(req, res) {
+  // Call the req.logout() function and provide a callback function
+  req.logout(function(err) {
+    if (err) {
+      // Handle any errors that occur during logout
+      console.error(err);
+      return res.status(500).json({ error: 'An error occurred during logout' });
+    }
+
+    // If logout is successful, send a response with status 200 and a JSON message
+    return res.status(200).json({ message: 'Logout successful' });
+  });
+});
+
+app.get('/user', function(req, res) {
+  // If the user is authenticated, req.user will contain the user object.
+  // You can access the user's information here and send it as a response.
+
+  // For example:
+  if (req.isAuthenticated()) {
+    res.status(200).json({ user: req.user });
+  } else {
+    res.status(401).json({ error: 'User not authenticated' });
+  }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`);
+});
+
+
+// app.post('/login', async function(req, res) {
+//   const { username, password } = req.body;
+//   const loginQuery = "select * from user_accounts where username=$1;";
+//   const getPassword = "select password_hash from user_accounts where username=$1;";
+
+  // try {
+  //   const loginResult = await pool.query(loginQuery, [username]);
+  //   if (loginResult.rows.length === 0) {
+  //     // Username not found
+  //     return res.status(401).json({ error: "Invalid username or password" });
+  //   }
+
+  //   const storedHash = loginResult.rows[0].password_hash;
+  //   bcrypt.compare(password, storedHash, function(err, result) {
+  //     if (err) {
+  //       console.error(err);
+  //       return res.status(500).json({ error: "An error occurred while comparing passwords" });
+  //     }
+
+  //     if (result === true) {
+  //       // Passwords match
+  //       return res.status(200).json(loginResult.rows[0]);
+  //     } else {
+  //       // Passwords do not match
+  //       return res.status(401).json({ error: "Invalid username or password" });
+  //     }
+  //   });
+  // } catch (err) {
+  //   console.error(err);
+  //   return res.status(500).json({ error: "An error occurred while processing the request" });
+  // }
+// });
+
+
+
+//  app.post('/register',async function(req,res){
+//   const {username,password,role}=req.body;
+//   const registerQuery="insert into user_accounts(username , password_hash, role) values($1, $2 , $3) RETURNING * ;";
+//   try{  
+//     bcrypt.genSalt(saltRounds, function(err, salt) {
+//     bcrypt.hash(password, salt,async function(err, hash) {
+//         // Store hash in your password DB.
+//        const registerResult=await pool.query(registerQuery, [username, hash, role]);
+//          res.status(201).json(registerResult.rows[0]);
+//     });
+// });
+ 
+
+
+//   }catch(err){
+//     console.error(err);
+//      res.status(500).json({ error: 'server error .' });
+//   }
+
+//  });
+
+
+
+
+// app.listen(3000, function() {
+//   console.log("Server started on port 3000");
+// });
 
 // function generateToken(user) {
 // // Generate a random string of 32 characters
