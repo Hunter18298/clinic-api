@@ -53,7 +53,100 @@ async function connectToDatabase() {
 
 connectToDatabase();
 
+async function createTables() {
+  try {
+    const client = await pool.connect();
 
+    // Create patients table
+    await client.query(`
+      CREATE TABLE patients (
+        patient_id SERIAL PRIMARY KEY,
+        patient_code VARCHAR(20) NOT NULL,
+        patient_name VARCHAR(100) NOT NULL,
+        patient_phone_no VARCHAR(20) NOT NULL,
+        patient_age INTEGER NOT NULL,
+        patient_money NUMERIC(10, 2) NOT NULL,
+        patient_next_visit DATE NOT NULL,
+        types VARCHAR(100),
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create expenses table
+    await client.query(`
+      CREATE TABLE expenses (
+        expense_id SERIAL PRIMARY KEY,
+        expense_amount NUMERIC(10, 2) NOT NULL,
+        expense_date DATE NOT NULL,
+        category_id INTEGER REFERENCES categories(category_id) ON DELETE CASCADE,
+        title VARCHAR(100),
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create employees table
+    await client.query(`
+      CREATE TABLE employees (
+        employee_id SERIAL PRIMARY KEY,
+        employee_name VARCHAR(100) NOT NULL,
+        employee_type_id INTEGER REFERENCES employee_types(type_id),
+        employee_salary NUMERIC(10, 2) NOT NULL,
+        hired_date DATE NOT NULL,
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create employee_types table
+    await client.query(`
+      CREATE TABLE employee_types (
+        type_id SERIAL PRIMARY KEY,
+        type_name VARCHAR(100) NOT NULL
+      );
+    `);
+
+    // Create categories table
+    await client.query(`
+      CREATE TABLE categories (
+        category_id SERIAL PRIMARY KEY,
+        category_name VARCHAR(100) NOT NULL
+      );
+    `);
+
+    // Create expense_invoice table
+    await client.query(`
+      CREATE TABLE expense_invoice (
+        invoice_id SERIAL PRIMARY KEY,
+        invoice_date DATE NOT NULL,
+        expense_id INTEGER REFERENCES expenses(expense_id) ON DELETE CASCADE,
+        amount NUMERIC(10, 2) NOT NULL,
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create patient_invoice table
+    await client.query(`
+      CREATE TABLE patient_invoice (
+        invoice_id SERIAL PRIMARY KEY,
+        invoice_date DATE NOT NULL,
+        patient_id INTEGER REFERENCES patients(patient_id) ON DELETE CASCADE,
+        amount NUMERIC(10, 2) NOT NULL,
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('Tables created successfully');
+    client.release();
+  } catch (err) {
+    console.error('Error creating tables:', err);
+  }
+}
+
+createTables();
 
 app.use(express.json());
 // Configure passport LocalStrategy
