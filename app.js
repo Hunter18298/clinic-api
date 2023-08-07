@@ -58,17 +58,13 @@ async function createTables() {
   try {
     const client = await pool.connect();
 
-    // Create patients table
+  
     await client.query(`
-      CREATE TABLE patients (
-        patient_id SERIAL PRIMARY KEY,
-        patient_code VARCHAR(20) NOT NULL,
-        patient_name VARCHAR(100) NOT NULL,
-        patient_phone_no VARCHAR(20) NOT NULL,
-        patient_age INTEGER NOT NULL,
-        patient_money NUMERIC(10, 2) NOT NULL,
-        patient_next_visit DATE NOT NULL,
-        types VARCHAR(100),
+      CREATE TABLE user_accounts (
+        user_id SERIAL PRIMARY KEY,
+        username VARCHAR(100) NOT NULL,
+        password_hash VARCHAR(100) NOT NULL,
+        role VARCHAR(50) NOT NULL,
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
