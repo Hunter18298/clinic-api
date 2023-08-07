@@ -89,7 +89,13 @@ async function createTables() {
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-
+  // Create employee_types table
+    await client.query(`
+      CREATE TABLE employee_types (
+        type_id SERIAL PRIMARY KEY,
+        type_name VARCHAR(100) NOT NULL
+      );
+    `);
     // Create employees table
     await client.query(`
       CREATE TABLE employees (
@@ -103,13 +109,7 @@ async function createTables() {
       );
     `);
 
-    // Create employee_types table
-    await client.query(`
-      CREATE TABLE employee_types (
-        type_id SERIAL PRIMARY KEY,
-        type_name VARCHAR(100) NOT NULL
-      );
-    `);
+  
 
   
     // Create expense_invoice table
