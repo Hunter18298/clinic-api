@@ -73,6 +73,13 @@ async function createTables() {
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+  // Create categories table
+    await client.query(`
+      CREATE TABLE categories (
+        category_id SERIAL PRIMARY KEY,
+        category_name VARCHAR(100) NOT NULL
+      );
+    `);
 
     // Create expenses table
     await client.query(`
@@ -108,14 +115,7 @@ async function createTables() {
       );
     `);
 
-    // Create categories table
-    await client.query(`
-      CREATE TABLE categories (
-        category_id SERIAL PRIMARY KEY,
-        category_name VARCHAR(100) NOT NULL
-      );
-    `);
-
+  
     // Create expense_invoice table
     await client.query(`
       CREATE TABLE expense_invoice (
