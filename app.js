@@ -28,30 +28,31 @@ app.use(session({
 // Initialize passport and session
 app.use(passport.initialize());
 app.use(passport.session());
-
+const connectionString = 'postgres://hunter:FIStpVhUm8tdfDaDkaNCeOzHi9tpP28T@dpg-cj7645djeehc739rtalg-a/clinic_6qfu';
+const pool = new Pool({ connectionString });
 // Database pool
-const pool = new Pool({
-  user: process.env.DB_USERNAME,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
+// const pool = new Pool({
+//   user: process.env.DB_USERNAME,
+//   host: process.env.DB_HOST,
+//   database: process.env.DB_NAME,
+//   password: process.env.DB_PASSWORD,
+//   port: process.env.DB_PORT,
+// });
 
-// Connect to the database
-async function connectToDatabase() {
-  try {
-    const client = await pool.connect();
+// // Connect to the database
+// async function connectToDatabase() {
+//   try {
+//     const client = await pool.connect();
 
-    console.log('Connected to PostgreSQL database!');
-    client.release();
-  } catch (err) {
-    console.error('Error acquiring client', err.stack);
-  }
-}
+//     console.log('Connected to PostgreSQL database!');
+//     client.release();
+//   } catch (err) {
+//     console.error('Error acquiring client', err.stack);
+//   }
+// }
 
 
-connectToDatabase();
+// connectToDatabase();
 
 async function createTables() {
   try {
