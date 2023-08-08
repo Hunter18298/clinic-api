@@ -60,13 +60,10 @@ async function createTables() {
 
   
     await client.query(`
-      CREATE TABLE user_accounts (
-        user_id SERIAL PRIMARY KEY,
-        username VARCHAR(100) NOT NULL,
-        password_hash VARCHAR(100) NOT NULL,
-        role VARCHAR(50) NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      CREATE TABLE employee_types (
+        type_id SERIAL PRIMARY KEY,
+        type_name VARCHAR(100) NOT NULL,
+       
       );
     `);
   // Create categories table
