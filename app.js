@@ -58,14 +58,7 @@ async function createTables() {
   try {
     const client = await pool.connect();
 
-  
-    await client.query(`
-      CREATE TABLE employee_types (
-        type_id SERIAL PRIMARY KEY,
-        type_name VARCHAR(100)
-      );
-    `);
-  // Create categories table
+ 
  
     // Create expenses table
     await client.query(`
