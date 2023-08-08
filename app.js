@@ -62,8 +62,7 @@ async function createTables() {
     await client.query(`
       CREATE TABLE employee_types (
         type_id SERIAL PRIMARY KEY,
-        type_name VARCHAR(100) NOT NULL,
-       
+        type_name VARCHAR(100)
       );
     `);
   // Create categories table
