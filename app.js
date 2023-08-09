@@ -255,7 +255,8 @@ app.route('/patients').get(async function (req, res) {
       error: 'User not authenticated'
     });
   }
-}).delete(async function (req, res) {
+});
+app.route('/patients/:id').delete(async function (req, res) {
   if (req.isAuthenticated()) {
     const patientId = req.params.id;
 
@@ -263,7 +264,7 @@ app.route('/patients').get(async function (req, res) {
       await pool.connect();
       try {
         // Check if the patient exists
-        const checkResult = await pool.query('SELECT * FROM patients WHERE patient_id = $1;', [patientId]);
+        const checkResult = await pool.query('SELECT * FROM patients WHERE id = $1', [patientId]);
         if (checkResult.rows.length === 0) {
           return res.status(404).json({
             error: 'Patient not found.'
@@ -271,7 +272,7 @@ app.route('/patients').get(async function (req, res) {
         }
 
         // Delete the patient
-        await pool.query('DELETE FROM patients WHERE patient_id = $1', [patientId]);
+        await pool.query('DELETE FROM patients WHERE id = $1', [patientId]);
 
         res.status(204).send(); // Successfully deleted
       } catch (err) {
@@ -290,7 +291,8 @@ app.route('/patients').get(async function (req, res) {
       error: 'User not authenticated'
     });
   }
-});;
+});
+
 
 
 app.post('/login', function (req, res, next) {
