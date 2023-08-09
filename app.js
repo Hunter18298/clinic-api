@@ -54,79 +54,79 @@ const pool = new Pool({ connectionString });
 
 // connectToDatabase();
 
-async function createTables() {
-  try {
-    const client = await pool.connect();
+// async function createTables() {
+//   try {
+//     const client = await pool.connect();
 
  
  
-    // Create expenses table
-    await client.query(`
-      CREATE TABLE expenses (
-        expense_id SERIAL PRIMARY KEY,
-        expense_amount NUMERIC(10, 2) NOT NULL,
-        expense_date DATE NOT NULL,
-        category_id INTEGER REFERENCES categories(category_id) ON DELETE CASCADE,
-        title VARCHAR(100),
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  // Create employee_types table
-    await client.query(`
-      CREATE TABLE employee_types (
-        type_id SERIAL PRIMARY KEY,
-        type_name VARCHAR(100) NOT NULL
-      );
-    `);
-    // Create employees table
-    await client.query(`
-      CREATE TABLE employees (
-        employee_id SERIAL PRIMARY KEY,
-        employee_name VARCHAR(100) NOT NULL,
-        employee_type_id INTEGER REFERENCES employee_types(type_id),
-        employee_salary NUMERIC(10, 2) NOT NULL,
-        hired_date DATE NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create expenses table
+//     await client.query(`
+//       CREATE TABLE expenses (
+//         expense_id SERIAL PRIMARY KEY,
+//         expense_amount NUMERIC(10, 2) NOT NULL,
+//         expense_date DATE NOT NULL,
+//         category_id INTEGER REFERENCES categories(category_id) ON DELETE CASCADE,
+//         title VARCHAR(100),
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
+//   // Create employee_types table
+//     await client.query(`
+//       CREATE TABLE employee_types (
+//         type_id SERIAL PRIMARY KEY,
+//         type_name VARCHAR(100) NOT NULL
+//       );
+//     `);
+//     // Create employees table
+//     await client.query(`
+//       CREATE TABLE employees (
+//         employee_id SERIAL PRIMARY KEY,
+//         employee_name VARCHAR(100) NOT NULL,
+//         employee_type_id INTEGER REFERENCES employee_types(type_id),
+//         employee_salary NUMERIC(10, 2) NOT NULL,
+//         hired_date DATE NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
   
 
   
-    // Create expense_invoice table
-    await client.query(`
-      CREATE TABLE expense_invoice (
-        invoice_id SERIAL PRIMARY KEY,
-        invoice_date DATE NOT NULL,
-        expense_id INTEGER REFERENCES expenses(expense_id) ON DELETE CASCADE,
-        amount NUMERIC(10, 2) NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create expense_invoice table
+//     await client.query(`
+//       CREATE TABLE expense_invoice (
+//         invoice_id SERIAL PRIMARY KEY,
+//         invoice_date DATE NOT NULL,
+//         expense_id INTEGER REFERENCES expenses(expense_id) ON DELETE CASCADE,
+//         amount NUMERIC(10, 2) NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
-    // Create patient_invoice table
-    await client.query(`
-      CREATE TABLE patient_invoice (
-        invoice_id SERIAL PRIMARY KEY,
-        invoice_date DATE NOT NULL,
-        patient_id INTEGER REFERENCES patients(patient_id) ON DELETE CASCADE,
-        amount NUMERIC(10, 2) NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create patient_invoice table
+//     await client.query(`
+//       CREATE TABLE patient_invoice (
+//         invoice_id SERIAL PRIMARY KEY,
+//         invoice_date DATE NOT NULL,
+//         patient_id INTEGER REFERENCES patients(patient_id) ON DELETE CASCADE,
+//         amount NUMERIC(10, 2) NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
-    console.log('Tables created successfully');
-    client.release();
-  } catch (err) {
-    console.error('Error creating tables:', err);
-  }
-}
+//     console.log('Tables created successfully');
+//     client.release();
+//   } catch (err) {
+//     console.error('Error creating tables:', err);
+//   }
+// }
 
-createTables();
+// createTables();
 
 app.use(express.json());
 // Configure passport LocalStrategy
@@ -255,7 +255,42 @@ app.route('/patients').get(async function (req, res) {
       error: 'User not authenticated'
     });
   }
-});
+}).delete(async function (req, res) {
+  if (req.isAuthenticated()) {
+    const patientId = req.params.id;
+
+    try {
+      await pool.connect();
+      try {
+        // Check if the patient exists
+        const checkResult = await pool.query('SELECT * FROM patients WHERE id = $1', [patientId]);
+        if (checkResult.rows.length === 0) {
+          return res.status(404).json({
+            error: 'Patient not found.'
+          });
+        }
+
+        // Delete the patient
+        await pool.query('DELETE FROM patients WHERE id = $1', [patientId]);
+
+        res.status(204).send(); // Successfully deleted
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({
+          error: 'Error deleting patient. Please try again later.'
+        });
+      }
+    } catch (err) {
+      return res.status(500).json({
+        status: "error"
+      });
+    }
+  } else {
+    res.status(401).json({
+      error: 'User not authenticated'
+    });
+  }
+});;
 
 
 app.post('/login', function (req, res, next) {
