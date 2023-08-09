@@ -263,7 +263,7 @@ app.route('/patients').get(async function (req, res) {
       await pool.connect();
       try {
         // Check if the patient exists
-        const checkResult = await pool.query('SELECT * FROM patients WHERE id = $1', [patientId]);
+        const checkResult = await pool.query('SELECT * FROM patients WHERE patient_id = $1', [patientId]);
         if (checkResult.rows.length === 0) {
           return res.status(404).json({
             error: 'Patient not found.'
