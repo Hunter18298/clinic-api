@@ -211,7 +211,9 @@ app.route('/patients').get(async function (req, res) {
     patient_age,
     patient_money,
     patient_next_visit,
-    types
+    types,
+    body_part,
+    sits
   } = req.body;
   if (req.isAuthenticated()) {
     try {
@@ -228,12 +230,14 @@ app.route('/patients').get(async function (req, res) {
       await pool.connect();
       try {
         // getting parameters
-        const values = [patient_code, patient_name, patient_phone_no, patient_age, patient_money, nextVisitDate, new Date(), new Date(), types];
+        const values = [patient_code, patient_name, patient_phone_no, patient_age, patient_money, nextVisitDate, new Date(), new Date(), types, body_part,
+    sits];
 
         // query
         const result = await pool.query(`
-          INSERT INTO patients (patient_code, patient_name, patient_phone_no, patient_age, patient_money, patient_next_visit, created_date, updated_date, types)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          INSERT INTO patients (patient_code, patient_name, patient_phone_no, patient_age, patient_money, patient_next_visit, created_date, updated_date, types, body_part,
+    sits)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11)
           RETURNING *;
         `, values);
 
