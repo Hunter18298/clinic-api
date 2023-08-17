@@ -191,9 +191,20 @@ passport.deserializeUser(function (id, cb) {
 app.route('/patients').get(async function (req, res) {
   if (req.isAuthenticated()) {
     try {
-      const result = await pool.query('SELECT * FROM patients ORDER BY created_date DESC');
+      const startDate = req.query.start_date;
+      const endDate = req.query.end_date;
+      let query = 'SELECT * FROM patients ORDER BY created_date DESC';
+      const values = [];
+      
+      if (startDate && endDate) {
+        query = 'SELECT * FROM patients WHERE created_date BETWEEN $1 AND $2 ORDER BY created_date DESC';
+        values.push(new Date(startDate), new Date(endDate));
+      }
+      
+      const result = await pool.query(query, values);
       res.json(result.rows);
     } catch (err) {
+      console.error(err);
       return res.status(500).json({
         status: "error"
       });
