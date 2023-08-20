@@ -53,7 +53,27 @@ const pool = new Pool({ connectionString });
 
 
 // connectToDatabase();
+const createTable = async () => {
+  try {
+    await client.query(`
+      CREATE TABLE employees (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        typeId INTEGER NOT NULL,
+        typeName VARCHAR(255),
+        salary VARCHAR(255) NOT NULL,
+        hiredDate DATE NOT NULL
+      )
+    `);
+    console.log('Table created successfully');
+  } catch (err) {
+    console.error('Error creating table:', err);
+  } finally {
+    await client.end();
+  }
+};
 
+createTable();
 // async function createTables() {
 //   try {
 //     const client = await pool.connect();
