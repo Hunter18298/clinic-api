@@ -466,6 +466,43 @@ INNER JOIN categories ON expenses.category_id = categories.category_id;`);
     });
   }
 });
+app.route('/expenses/:id')
+  .delete(async function (req, res) {
+    if (req.isAuthenticated()) {
+      const expenseId = req.params.id;
+
+      if (!expenseId) {
+        return res.status(400).json({
+          error: 'Expense ID is required for deletion.'
+        });
+      }
+
+      try {
+        const result = await pool.query('DELETE FROM expenses WHERE expense_id = $1 RETURNING *;', [expenseId]);
+
+        if (result.rowCount === 0) {
+          return res.status(404).json({
+            error: 'Expense not found or already deleted.'
+          });
+        }
+
+        res.status(200).json({
+          message: `Expense with ID: ${expenseId} deleted successfully.`,
+          deletedExpense: result.rows[0]
+        });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({
+          error: 'Error deleting expense. Please try again later.'
+        });
+      }
+    } else {
+      res.status(401).json({
+        error: 'User not authenticated'
+      });
+    }
+  });
+
 //---------------Employees----------------
 app.route('/employees').get(async function (req, res) {
   try {
