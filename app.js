@@ -197,7 +197,7 @@ app.route('/patients').get(async function (req, res) {
       const values = [];
       
       if (startDate && endDate) {
-        query = 'SELECT * FROM patients WHERE created_date BETWEEN $1 AND $2 ORDER BY created_date DESC';
+        query = 'SELECT * FROM patients WHERE patient_next_visit BETWEEN $1 AND $2 ORDER BY patient_next_visit DESC';
         values.push(new Date(startDate), new Date(endDate));
       }
       
