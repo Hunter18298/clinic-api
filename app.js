@@ -1,4 +1,7 @@
 //secret enviroment variable creator
+// Aug 20 05:39:43 PM  Warning: connect.session() MemoryStore is not
+// Aug 20 05:39:43 PM  designed for a production environment, as it will leak
+// Aug 20 05:39:43 PM  memory, and will not scale past a single process.
 //in terminal create hidden file touch .env
 //the format must be capital variables lik DB_HOST=any
 const {
@@ -52,63 +55,63 @@ const pool = new Pool({ connectionString });
 // }
 
 
-// connectToDatabase();
+// // connectToDatabase();
 
-async function createTables() {
-  try {
-    const client = await pool.connect();
+// async function createTables() {
+//   try {
+//     const client = await pool.connect();
 
  
  
    
-    // Create employees table
-    await client.query(`
-      CREATE TABLE employees (
-        employee_id SERIAL PRIMARY KEY,
-        employee_name VARCHAR(100) NOT NULL,
-        employee_type_id INTEGER REFERENCES employee_types(type_id),
-        employee_salary NUMERIC(10, 2) NOT NULL,
-        hired_date DATE NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create employees table
+//     await client.query(`
+//       CREATE TABLE employees (
+//         employee_id SERIAL PRIMARY KEY,
+//         employee_name VARCHAR(100) NOT NULL,
+//         employee_type_id INTEGER REFERENCES employee_types(type_id),
+//         employee_salary NUMERIC(10, 2) NOT NULL,
+//         hired_date DATE NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
   
 
   
-    // Create expense_invoice table
-    await client.query(`
-      CREATE TABLE expense_invoice (
-        invoice_id SERIAL PRIMARY KEY,
-        invoice_date DATE NOT NULL,
-        expense_id INTEGER REFERENCES expenses(expense_id) ON DELETE CASCADE,
-        amount NUMERIC(10, 2) NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create expense_invoice table
+//     await client.query(`
+//       CREATE TABLE expense_invoice (
+//         invoice_id SERIAL PRIMARY KEY,
+//         invoice_date DATE NOT NULL,
+//         expense_id INTEGER REFERENCES expenses(expense_id) ON DELETE CASCADE,
+//         amount NUMERIC(10, 2) NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
-    // Create patient_invoice table
-    await client.query(`
-      CREATE TABLE patient_invoice (
-        invoice_id SERIAL PRIMARY KEY,
-        invoice_date DATE NOT NULL,
-        patient_id INTEGER REFERENCES patients(patient_id) ON DELETE CASCADE,
-        amount NUMERIC(10, 2) NOT NULL,
-        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+//     // Create patient_invoice table
+//     await client.query(`
+//       CREATE TABLE patient_invoice (
+//         invoice_id SERIAL PRIMARY KEY,
+//         invoice_date DATE NOT NULL,
+//         patient_id INTEGER REFERENCES patients(patient_id) ON DELETE CASCADE,
+//         amount NUMERIC(10, 2) NOT NULL,
+//         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       );
+//     `);
 
-    console.log('Tables created successfully');
-    client.release();
-  } catch (err) {
-    console.error('Error creating tables:', err);
-  }
-}
+//     console.log('Tables created successfully');
+//     client.release();
+//   } catch (err) {
+//     console.error('Error creating tables:', err);
+//   }
+// }
 
-createTables();
+// createTables();
 
 app.use(express.json());
 // Configure passport LocalStrategy
